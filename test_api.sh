@@ -87,7 +87,10 @@ async function main() {
 
   await request(`/rooms/${roomId}/join`, { method: "POST", token: tokenB });
   await request(`/rooms/${roomId}/voice/join`, { method: "POST", token: tokenA });
-  const credentials = await request(`/rooms/${roomId}/voice/credentials`, { token: tokenA });
+  const credentials = await request(`/rooms/${roomId}/voice/credentials`, {
+    method: "POST",
+    token: tokenA,
+  });
 
   console.log("Fetching chat history and conversations...");
   await request(`/chat/history?with_user=${encodeURIComponent(meB.user_id)}`, { token: tokenA });
