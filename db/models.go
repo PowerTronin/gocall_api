@@ -44,13 +44,15 @@ type FriendRequest struct {
 
 // Room represents a room
 type Room struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	RoomID    string    `gorm:"unique;not null" json:"room_id"` // UUID
-	UserID    string    `gorm:"not null" json:"user_id"`        // Creator's user UUID
-	Name      string    `gorm:"not null" json:"name"`
-	Type      string    `gorm:"not null" json:"type"`      // public, private, secret
-	Password  string    `gorm:"type:text" json:"password"` // null if not password-protected
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID                      uint      `gorm:"primaryKey" json:"id"`
+	RoomID                  string    `gorm:"unique;not null" json:"room_id"` // UUID
+	UserID                  string    `gorm:"not null" json:"user_id"`        // Creator's user UUID
+	Name                    string    `gorm:"not null" json:"name"`
+	Type                    string    `gorm:"not null" json:"type"`      // public, private, secret
+	Password                string    `gorm:"type:text" json:"password"` // null if not password-protected
+	SharedStageLayout       string    `gorm:"type:text" json:"shared_stage_layout"`
+	SharedStageLayoutLocked bool      `gorm:"default:false" json:"shared_stage_layout_locked"`
+	CreatedAt               time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 // RoomMember represents a member in a room

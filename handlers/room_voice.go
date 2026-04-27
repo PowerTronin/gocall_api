@@ -53,6 +53,7 @@ type roomStateResponse struct {
 	Members           []roomMemberState           `json:"members"`
 	VoiceParticipants []roomVoiceParticipantState `json:"voice_participants"`
 	InVoice           bool                        `json:"in_voice"`
+	StageLayout       roomStageLayoutState        `json:"stage_layout"`
 }
 
 type roomVoiceCredentialsResponse struct {
@@ -272,6 +273,15 @@ func GetRoomState(c *gin.Context) {
 		Members:           memberStates,
 		VoiceParticipants: voiceStates,
 		InVoice:           inVoice,
+		StageLayout: func() roomStageLayoutState {
+			payload := parseRoomSharedStageLayout(room.SharedStageLayout)
+			return roomStageLayoutState{
+				StageLayouts:  payload.StageLayouts,
+				PinnedTileIDs: payload.PinnedTileIDs,
+				SharedLocked:  room.SharedStageLayoutLocked,
+				CanEditShared: canEditSharedStageLayout(member, room),
+			}
+		}(),
 	})
 }
 

@@ -97,6 +97,8 @@ func main() {
 			protected.POST("/rooms/direct", handlers.GetOrCreateDirectRoom)
 			protected.POST("/rooms/:id/join", handlers.JoinRoom)
 			protected.GET("/rooms/:id/state", handlers.GetRoomState)
+			protected.PUT("/rooms/:id/stage-layout", handlers.UpdateRoomSharedStageLayout)
+			protected.PUT("/rooms/:id/stage-layout/lock", handlers.UpdateRoomSharedStageLayoutLock)
 			protected.POST("/rooms/:id/voice/join", handlers.JoinRoomVoice)
 			protected.POST("/rooms/:id/voice/leave", handlers.LeaveRoomVoice)
 			protected.POST("/rooms/:id/voice/credentials", handlers.GetRoomVoiceCredentials)
