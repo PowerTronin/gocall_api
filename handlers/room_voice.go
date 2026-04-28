@@ -54,6 +54,8 @@ type roomStateResponse struct {
 	VoiceParticipants []roomVoiceParticipantState `json:"voice_participants"`
 	InVoice           bool                        `json:"in_voice"`
 	StageLayout       roomStageLayoutState        `json:"stage_layout"`
+	StageNotes        []roomStageNoteState        `json:"stage_notes"`
+	StageImages       []roomStageImageState       `json:"stage_images"`
 }
 
 type roomVoiceCredentialsResponse struct {
@@ -261,6 +263,17 @@ func GetRoomState(c *gin.Context) {
 		})
 	}
 
+	stageNotes, err := listRoomStageNotes(room.RoomID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch room stage notes"})
+		return
+	}
+	stageImages, err := listRoomStageImages(room.RoomID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch room stage images"})
+		return
+	}
+
 	c.JSON(http.StatusOK, roomStateResponse{
 		Room: roomStateRoom{
 			ID:        room.ID,
@@ -282,6 +295,8 @@ func GetRoomState(c *gin.Context) {
 				CanEditShared: canEditSharedStageLayout(member, room),
 			}
 		}(),
+		StageNotes: stageNotes,
+		StageImages: stageImages,
 	})
 }
 

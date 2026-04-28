@@ -87,6 +87,49 @@ type RoomVoiceParticipant struct {
 	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
+// RoomStageNote stores a shared note tile on the room stage workspace.
+type RoomStageNote struct {
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	RoomID     string    `gorm:"not null;index" json:"room_id"`
+	UserID     string    `gorm:"not null;index" json:"user_id"`
+	X          float64   `gorm:"not null" json:"x"`
+	Y          float64   `gorm:"not null" json:"y"`
+	W          float64   `gorm:"not null" json:"w"`
+	H          float64   `gorm:"not null" json:"h"`
+	Z          float64   `gorm:"not null" json:"z"`
+	LegacyText string    `gorm:"column:text;type:text;not null;default:''" json:"-"`
+	Title      string    `gorm:"type:text;not null;default:''" json:"title"`
+	Body       string    `gorm:"type:text;not null;default:''" json:"body"`
+	BodyBold   bool      `gorm:"default:false" json:"body_bold"`
+	BodyStrike bool      `gorm:"default:false" json:"body_strike"`
+	BodySize   string    `gorm:"type:text;not null;default:'md'" json:"body_size"`
+	Color      string    `gorm:"type:text;not null;default:'amber'" json:"color"`
+	IsPinned   bool      `gorm:"default:false" json:"is_pinned"`
+	IsLocked   bool      `gorm:"default:false" json:"is_locked"`
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+// RoomStageImage stores a shared image tile on the room stage workspace.
+type RoomStageImage struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	RoomID    string    `gorm:"not null;index" json:"room_id"`
+	UserID    string    `gorm:"not null;index" json:"user_id"`
+	X         float64   `gorm:"not null" json:"x"`
+	Y         float64   `gorm:"not null" json:"y"`
+	W         float64   `gorm:"not null" json:"w"`
+	H         float64   `gorm:"not null" json:"h"`
+	Z         float64   `gorm:"not null" json:"z"`
+	Src       string    `gorm:"type:text;not null" json:"src"`
+	FileName  string    `gorm:"type:text;not null;default:''" json:"file_name"`
+	Caption   string    `gorm:"type:text;not null;default:''" json:"caption"`
+	BgMode    string    `gorm:"column:bg_mode;type:text;not null;default:'grid'" json:"bg_mode"`
+	IsPinned  bool      `gorm:"default:false" json:"is_pinned"`
+	IsLocked  bool      `gorm:"default:false" json:"is_locked"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
 // Message stores a direct chat message between two users.
 type Message struct {
 	ID         uint      `gorm:"primaryKey" json:"id"`
@@ -113,10 +156,58 @@ func InitDatabase(path string) {
 		&RoomMember{},
 		&RoomInvite{},
 		&RoomVoiceParticipant{},
+		&RoomStageNote{},
+		&RoomStageImage{},
 		&Message{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database schema:", err)
+	}
+
+	migrateRoomStageNotesLegacyText()
+}
+
+func migrateRoomStageNotesLegacyText() {
+	type columnInfo struct {
+		Name string `gorm:"column:name"`
+	}
+
+	var columns []columnInfo
+	if err := DB.Raw("PRAGMA table_info(room_stage_notes)").Scan(&columns).Error; err != nil {
+		log.Printf("Failed to inspect room_stage_notes schema: %v", err)
+		return
+	}
+
+	hasLegacyText := false
+	hasTitle := false
+	hasBody := false
+	for _, column := range columns {
+		switch column.Name {
+		case "text":
+			hasLegacyText = true
+		case "title":
+			hasTitle = true
+		case "body":
+			hasBody = true
+		}
+	}
+
+	if !hasLegacyText || !hasBody || !hasTitle {
+		return
+	}
+
+	if err := DB.Exec(`
+		UPDATE room_stage_notes
+		SET body = CASE
+			WHEN (body IS NULL OR body = '') AND text IS NOT NULL THEN text
+			ELSE body
+		END,
+		    title = CASE
+			WHEN (title IS NULL OR title = '') THEN ''
+			ELSE title
+		END
+	`).Error; err != nil {
+		log.Printf("Failed to migrate legacy room_stage_notes text into body: %v", err)
 	}
 }
 
